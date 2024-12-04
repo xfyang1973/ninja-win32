@@ -21,7 +21,7 @@ jobs:
     - name: Build ninja
       shell: bash
       run: |
-        cmake -Bbuild -A Win32 -T v141_xp 
+        cmake -Bbuild -A Win32 -T v141 
         cmake --build build --parallel --config Debug
         cmake --build build --parallel --config Release
 
