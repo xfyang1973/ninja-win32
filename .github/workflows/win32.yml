@@ -1,4 +1,4 @@
-name: macOS
+name: Win32
 
 on:
   pull_request:
@@ -8,38 +8,37 @@ on:
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: windows-2019
 
+    strategy:
+      fail-fast: false
     steps:
     - uses: actions/checkout@v4
 
     - name: Install dependencies
-      run: brew install re2c p7zip cmake
+      run: choco install re2c
 
     - name: Build ninja
       shell: bash
-      env:
-        MACOSX_DEPLOYMENT_TARGET: 10.15
       run: |
-        cmake -Bbuild -GXcode '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
-        cmake --build build --config Release
+        cmake -Bbuild -A Win32 -T v141_xp 
+        cmake --build build --parallel --config Debug
+        cmake --build build --parallel --config Release
+
+    - name: Test ninja (Debug)
+      run: .\ninja_test.exe
+      working-directory: build/Debug
 
     - name: Test ninja (Release)
-      run: ./ninja_test
+      run: .\ninja_test.exe
       working-directory: build/Release
 
     - name: Create ninja archive
       shell: bash
       run: |
         mkdir artifact
-        7z a artifact/ninja-mac.zip ./build/Release/ninja
+        7z a artifact/ninja-win32.zip ./build/Release/ninja.exe
 
-    # Upload ninja binary archive as an artifact
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ninja-binary-archives
-        path: artifact
 
     - name: Upload release asset
       if: github.event.action == 'published'
@@ -48,6 +47,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./artifact/ninja-mac.zip
-        asset_name: ninja-mac.zip
+        asset_path: ./artifact/ninja-win32.zip
+        asset_name: ninja-win32.zip
         asset_content_type: application/zip
